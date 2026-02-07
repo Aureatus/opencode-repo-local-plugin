@@ -54,6 +54,7 @@ The release workflow will publish automatically when it sees the tag.
 
 - Runs `bun run check`
 - Verifies tag matches `package.json` version
+- Verifies tagged commit is contained in `origin/main`
 - Verifies publish contents with `npm pack --dry-run`
 - Publishes with provenance (`npm publish --provenance`)
 
