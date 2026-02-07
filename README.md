@@ -150,6 +150,16 @@ bun run test:e2e
 bun run build
 ```
 
+## Releasing
+
+- This project uses tag-driven publishing to npm via GitHub Actions.
+- Use release helper scripts:
+  - `bun run release:verify`
+  - `bun run release:patch|minor|major`
+  - `bun run release:beta:first` / `bun run release:beta:next`
+- Push version commit and tag with `git push origin main --follow-tags`.
+- Full runbook: see `RELEASING.md`.
+
 Integration script notes:
 
 - Default run validates multiple allowed input formats against `Aureatus/opencode-repo-local-plugin`.

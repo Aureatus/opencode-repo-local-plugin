@@ -28,6 +28,12 @@
     "test:e2e": "bun run scripts/e2e-opencode-run.ts",
     "lint": "ultracite check --error-on-warnings",
     "check": "concurrently --kill-others-on-fail --success all --names core,integration \"bun run scripts/check-no-ignores.ts && bun run lint && bun run typecheck && bun run test && bun run build\" \"bun run test:integration\"",
+    "release:verify": "bun run check && npm pack --dry-run",
+    "release:patch": "npm version patch -m \"chore(release): v%s\"",
+    "release:minor": "npm version minor -m \"chore(release): v%s\"",
+    "release:major": "npm version major -m \"chore(release): v%s\"",
+    "release:beta:first": "npm version prepatch --preid beta -m \"chore(release): v%s\"",
+    "release:beta:next": "npm version prerelease --preid beta -m \"chore(release): v%s\"",
     "prepare": "husky",
     "prepack": "bun run build",
     "fix": "ultracite fix --unsafe && bun run scripts/check-no-ignores.ts"
