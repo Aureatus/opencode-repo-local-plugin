@@ -243,7 +243,7 @@ export async function repoEnsureLocal(
     ? await updateExistingRepo(localPath, parsedRepo, mode, ref, actions)
     : await cloneMissingRepo(
         localPath,
-        parsedRepo.raw,
+        parsedRepo.canonicalUrl,
         args.depth,
         ref,
         actions

@@ -24,19 +24,20 @@ Add the package to your OpenCode config:
 
 ### Local development
 
-1. Build this package:
+1. Install dependencies:
 
 ```bash
 bun install
-bun run build
 ```
 
 2. For local OpenCode testing in this repo, use the included local plugin wiring:
 
-- `.opencode/package.json` installs this package via `file:..`
-- `.opencode/plugins/repo-local-plugin.ts` loads it as a local plugin
+- `.opencode/plugins/repo-local-plugin.ts` imports `src/index.ts` directly for fast iteration (no build step required)
+- `.opencode/package.json` installs plugin runtime dependencies for OpenCode
 
-3. Or publish and install via npm for regular usage.
+3. For a publishable artifact check, run `bun run build` before release.
+
+4. Or publish and install via npm for regular usage.
 
 ## Tool: `repo_ensure_local`
 
@@ -98,8 +99,8 @@ bun run build
 
 Integration script notes:
 
-- Default repo: `https://github.com/Aureatus/opencode-repo-local-plugin.git`
-- Override repo: `bun run test:integration -- https://github.com/OWNER/REPO.git`
+- Default run validates multiple allowed input formats against `Aureatus/opencode-repo-local-plugin`.
+- Override to a single repo input: `bun run test:integration -- https://github.com/OWNER/REPO.git`
 - Keep clone directory for inspection: `OPENCODE_REPO_INTEGRATION_KEEP=true bun run test:integration`
 - Set custom clone root: `OPENCODE_REPO_INTEGRATION_ROOT=/abs/path bun run test:integration`
 

@@ -1,3 +1,3 @@
-import RepoLocalPlugin from "opencode-repo-local-plugin";
+import RepoLocalPlugin from "../../src/index.ts";
 
 export const RepoLocalDevPlugin = RepoLocalPlugin;
