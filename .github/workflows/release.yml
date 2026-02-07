@@ -6,7 +6,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -73,6 +73,28 @@ jobs:
         if: ${{ !contains(github.ref_name, '-') }}
         run: npm publish --access public --provenance --registry=https://registry.npmjs.org
 
+      - name: Create GitHub release (stable)
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "GitHub release already exists for $GITHUB_REF_NAME"
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --latest
+
       - name: Publish beta
         if: ${{ contains(github.ref_name, '-') }}
         run: npm publish --access public --tag beta --provenance --registry=https://registry.npmjs.org
+
+      - name: Create GitHub release (beta)
+        if: ${{ contains(github.ref_name, '-') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "GitHub release already exists for $GITHUB_REF_NAME"
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --prerelease

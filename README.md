@@ -158,6 +158,7 @@ bun run build
   - `bun run release:patch|minor|major`
   - `bun run release:beta:first` / `bun run release:beta:next`
 - Push version commit and tag with `git push origin main --follow-tags`.
+- GitHub Release notes are created automatically from pushed release tags.
 - Full runbook: see `RELEASING.md`.
 
 Integration script notes:

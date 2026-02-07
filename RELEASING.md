@@ -58,6 +58,9 @@ The release workflow will publish automatically when it sees the tag.
 - Verifies tagged commit is contained in `origin/main`
 - Verifies publish contents with `npm pack --dry-run`
 - Publishes with provenance (`npm publish --provenance`)
+- Creates a GitHub Release automatically from the tag:
+  - stable tags are marked as latest
+  - prerelease tags are marked as prerelease
 
 ## Rollback and mitigation
 
