@@ -59,15 +59,71 @@ describe("parseRepoUrl", () => {
     );
   });
 
+  test("normalizes github web blob URL to repo root", () => {
+    const parsed = parseRepoUrl(
+      "https://github.com/anomalyco/opencode/blob/main/README.md",
+      false
+    );
+    expect(parsed.pathSegments).toEqual(["anomalyco", "opencode"]);
+    expect(parsed.canonicalUrl).toBe(
+      "https://github.com/anomalyco/opencode.git"
+    );
+  });
+
+  test("normalizes github web issues URL to repo root", () => {
+    const parsed = parseRepoUrl(
+      "https://github.com/anomalyco/opencode/issues/123",
+      false
+    );
+    expect(parsed.pathSegments).toEqual(["anomalyco", "opencode"]);
+    expect(parsed.canonicalUrl).toBe(
+      "https://github.com/anomalyco/opencode.git"
+    );
+  });
+
+  test("normalizes https URL without .git suffix", () => {
+    const parsed = parseRepoUrl("https://github.com/anomalyco/opencode", false);
+    expect(parsed.canonicalUrl).toBe(
+      "https://github.com/anomalyco/opencode.git"
+    );
+  });
+
+  test("parses non-github host/path shorthand", () => {
+    const parsed = parseRepoUrl("gitlab.com/acme/widgets", false);
+    expect(parsed.host).toBe("gitlab.com");
+    expect(parsed.pathSegments).toEqual(["acme", "widgets"]);
+    expect(parsed.canonicalUrl).toBe("https://gitlab.com/acme/widgets.git");
+  });
+
   test("rejects ssh repository URLs when disabled", () => {
     expect(() =>
       parseRepoUrl("git@github.com:anomalyco/opencode.git", false)
     ).toThrow();
   });
 
+  test("rejects ssh:// repository URLs when disabled", () => {
+    expect(() =>
+      parseRepoUrl("ssh://git@github.com/anomalyco/opencode.git", false)
+    ).toThrow();
+  });
+
   test("rejects http URLs", () => {
     expect(() =>
       parseRepoUrl("http://github.com/anomalyco/opencode.git", false)
+    ).toThrow();
+  });
+
+  test("rejects empty repository input", () => {
+    expect(() => parseRepoUrl("", false)).toThrow();
+  });
+
+  test("rejects owner-only shorthand", () => {
+    expect(() => parseRepoUrl("anomalyco", false)).toThrow();
+  });
+
+  test("rejects invalid path segment in https URL", () => {
+    expect(() =>
+      parseRepoUrl("https://github.com/anomalyco/..", false)
     ).toThrow();
   });
 });
