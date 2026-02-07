@@ -60,6 +60,13 @@ Output fields:
 - `OPENCODE_REPO_CLONE_ROOT`: default clone root (fallback is `~/.opencode/repos`)
 - `OPENCODE_REPO_ALLOW_SSH=true`: default SSH URL allowance
 
+## OpenCode permissions
+
+- This repo includes `opencode.json` with:
+  - `permission.external_directory["~/.opencode/repos/**"] = "allow"`
+- This lets OpenCode built-in tools access cloned repos under `~/.opencode/repos` without repeated approval prompts.
+- Recommended for users of this plugin: add the same permission rule to your own global or project OpenCode config.
+
 ## Safety behavior
 
 - Rejects malformed/unsupported repo URLs
