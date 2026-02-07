@@ -1,6 +1,6 @@
 {
   "name": "opencode-repo-local",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "OpenCode plugin to clone or update repositories locally for built-in tooling",
   "packageManager": "bun@1.2.22",
   "type": "module",
