@@ -42,7 +42,11 @@ bun run build
 
 Arguments:
 
-- `repo` (required): repository URL (`https://...`)
+- `repo` (required): repository reference in one of these forms:
+  - `https://host/owner/repo(.git)`
+  - `git@host:owner/repo.git` (when `allow_ssh` is true)
+  - `host/owner/repo`
+  - `owner/repo` (GitHub shorthand)
 - `ref` (optional): branch/tag/SHA to checkout after clone/fetch
 - `clone_root` (optional): absolute path override for clone root
 - `depth` (optional): shallow clone depth
