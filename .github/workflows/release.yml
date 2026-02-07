@@ -56,17 +56,23 @@ jobs:
       - name: Verify publish files
         run: npm pack --dry-run
 
-      - name: Clear npm token config
-        run: npm config delete //registry.npmjs.org/:_authToken || true
+      - name: Configure npm auth
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "Missing NPM_TOKEN secret"
+            exit 1
+          fi
+          npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"
+
+      - name: Verify npm auth
+        run: npm whoami
 
       - name: Publish stable
         if: ${{ !contains(github.ref_name, '-') }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance --registry=https://registry.npmjs.org
 
       - name: Publish beta
         if: ${{ contains(github.ref_name, '-') }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --tag beta --provenance --registry=https://registry.npmjs.org
