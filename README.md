@@ -77,6 +77,41 @@ Output fields:
 - This lets OpenCode built-in tools access cloned repos under `~/.opencode/repos` without repeated approval prompts.
 - Recommended for users of this plugin: add the same permission rule to your own global or project OpenCode config.
 
+## Local OpenCode smoke test
+
+Use this to validate the plugin in a real OpenCode session.
+
+1. Confirm OpenCode loads the local plugin shim:
+
+```bash
+opencode debug config
+```
+
+Verify plugin list includes `.opencode/plugins/repo-local-plugin.ts`.
+
+2. Forced tool smoke test (deterministic):
+
+```bash
+opencode run "You must call repo_ensure_local first. Use repo='Aureatus/opencode-repo-local-plugin' and update_mode='fetch-only'. Then report only: status, repo_url, local_path, head_sha."
+```
+
+3. Natural-intent smoke test (agent should choose the tool):
+
+```bash
+opencode run "Please inspect ghoulr/opencode-websearch-cited, find the custom tool it exports, and report the file path where it is defined."
+```
+
+Important:
+
+- Run the natural-intent test against a repo that is not your current workspace.
+- If you reference the current repo, OpenCode may correctly skip `repo_ensure_local` because local files are already available.
+
+Expected behavior:
+
+- OpenCode chooses `repo_ensure_local` for external repo references.
+- Output includes a valid `local_path` under `~/.opencode/repos/...`.
+- Follow-up inspection uses built-in tools (`Read`, `Glob`, `Grep`, `Bash`) against that local path.
+
 ## Safety behavior
 
 - Rejects malformed/unsupported repo URLs
