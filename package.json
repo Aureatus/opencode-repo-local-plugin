@@ -29,9 +29,10 @@
     "lint": "ultracite check --error-on-warnings",
     "check:core": "bun run check:no-ignores && bun run lint && bun run typecheck && bun run test && bun run build",
     "check": "concurrently --kill-others-on-fail --success all --names core,integration \"bun run check:core\" \"bun run test:integration\"",
+    "fix:safe": "ultracite fix",
     "prepare": "husky",
     "prepack": "bun run build",
-    "fix": "ultracite fix"
+    "fix": "ultracite fix --unsafe && bun run check:no-ignores"
   },
   "keywords": [
     "opencode",

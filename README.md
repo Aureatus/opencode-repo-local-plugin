@@ -72,6 +72,7 @@ Output fields:
 ```bash
 bun install
 bun run fix
+bun run fix:safe
 bun run check
 bun run check:no-ignores
 bun run lint
@@ -96,7 +97,8 @@ Integration script notes:
 - Build command: `bun run build` (`tsdown --fail-on-warn`, warnings fail the build).
 - Ignore-guard command: `bun run check:no-ignores` (fails on `biome-ignore` and TS ignore directives).
 - Lint command: `bun run lint` (Ultracite/Biome with `--error-on-warnings`).
-- Fix command: `bun run fix` (Ultracite auto-fix).
+- Fix command: `bun run fix` (Ultracite safe + unsafe fixes, then no-ignore guard).
+- Safe fix command: `bun run fix:safe` (Ultracite safe fixes only).
 - Pre-commit command: `bun run check`.
 - Pre-push command: `bun run check`.
 - Hooks are installed by running `bun install` via the `prepare` script.
