@@ -25,6 +25,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:integration": "bun run scripts/integration-test.ts",
+    "test:e2e": "bun run scripts/e2e-opencode-run.ts",
     "lint": "ultracite check --error-on-warnings",
     "check": "concurrently --kill-others-on-fail --success all --names core,integration \"bun run scripts/check-no-ignores.ts && bun run lint && bun run typecheck && bun run test && bun run build\" \"bun run test:integration\"",
     "prepare": "husky",

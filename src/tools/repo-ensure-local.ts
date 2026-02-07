@@ -17,6 +17,7 @@ import {
   pullFfOnlyForBranch,
 } from "../lib/git";
 import { buildRepoPath, resolveCloneRoot } from "../lib/paths";
+import { logRepoEnsureFailure, logRepoEnsureSuccess } from "../lib/telemetry";
 import type {
   RepoEnsureLocalArgs,
   RepoEnsureResult,
@@ -269,10 +270,13 @@ export const repoEnsureLocalTool = tool({
     "When a user references a GitHub/remote repository, clone or update it locally so OpenCode can investigate with built-in tools (Read, Grep, Glob, Bash). Also useful for repo-specific conceptual analysis when grounding answers in real source code improves reliability. Returns absolute local_path.",
   args: REPO_TOOL_ARGS,
   async execute(args) {
+    const typedArgs = args as RepoEnsureLocalArgs;
     try {
-      const result = await repoEnsureLocal(args as RepoEnsureLocalArgs);
+      const result = await repoEnsureLocal(typedArgs);
+      await logRepoEnsureSuccess(typedArgs, result);
       return toResultText(result);
     } catch (error) {
+      await logRepoEnsureFailure(typedArgs, error);
       formatFailure(error);
     }
   },

@@ -69,6 +69,13 @@ Output fields:
 
 - `OPENCODE_REPO_CLONE_ROOT`: default clone root (fallback is `~/.opencode/repos`)
 - `OPENCODE_REPO_ALLOW_SSH=true`: default SSH URL allowance
+- `OPENCODE_REPO_TELEMETRY_PATH`: optional telemetry JSONL path override
+
+## Telemetry
+
+- `repo_ensure_local` writes invocation telemetry on every run.
+- Default file: `~/.local/share/opencode/plugins/opencode-repo-local-plugin/telemetry.jsonl`
+- Event fields include `repo_input`, `canonical_repo_url`, `status`, `local_path`, and error metadata.
 
 ## OpenCode permissions
 
@@ -129,6 +136,7 @@ bun run lint
 bun run typecheck
 bun run test
 bun run test:integration
+bun run test:e2e
 bun run build
 ```
 
@@ -138,6 +146,20 @@ Integration script notes:
 - Override to a single repo input: `bun run test:integration -- https://github.com/OWNER/REPO.git`
 - Keep clone directory for inspection: `OPENCODE_REPO_INTEGRATION_KEEP=true bun run test:integration`
 - Set custom clone root: `OPENCODE_REPO_INTEGRATION_ROOT=/abs/path bun run test:integration`
+
+E2E script notes:
+
+- `bun run test:e2e` runs real `opencode run` prompts and asserts tool usage via telemetry.
+- It validates all supported repo input formats across two required targets:
+  - `Aureatus/opencode-repo-local-plugin`
+  - `ghoulr/opencode-websearch-cited`
+- It checks each target's formats resolve to one normalized local path.
+- Keep temporary artifacts for inspection: `OPENCODE_REPO_E2E_KEEP=true bun run test:e2e`
+- The test is valid because each run uses:
+  - a fresh temporary clone root (`/tmp/opencode-repo-e2e-.../clones`), not the current workspace,
+  - a run-specific telemetry file,
+  - real OpenCode prompts that must trigger `repo_ensure_local`.
+- This verifies end-to-end behavior (tool invocation, clone/update, and normalized path resolution) without depending on local workspace files.
 
 ## Git hooks
 

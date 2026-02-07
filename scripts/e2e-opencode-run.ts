@@ -1,0 +1,231 @@
+import { spawn } from "node:child_process";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+interface TelemetryEvent {
+  event: "repo_ensure_local";
+  ok: boolean;
+  repo_input: string;
+  local_path: string | null;
+}
+
+interface RepoTarget {
+  name: string;
+  base: string;
+}
+
+interface RepoCase {
+  target: RepoTarget;
+  input: string;
+}
+
+interface TargetSummary {
+  target: string;
+  testedInputs: string[];
+  resolvedLocalPath: string;
+  telemetryEvents: number;
+}
+
+interface CommandResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+const E2E_REPO_TARGETS: readonly RepoTarget[] = [
+  {
+    name: "self",
+    base: "Aureatus/opencode-repo-local-plugin",
+  },
+  {
+    name: "fixture",
+    base: "ghoulr/opencode-websearch-cited",
+  },
+];
+
+const COMMAND_TIMEOUT_MS = 180_000;
+
+function buildPrompt(repo: string, cloneRoot: string): string {
+  return `You must call repo_ensure_local first. Use repo='${repo}', clone_root='${cloneRoot}', update_mode='fetch-only', and allow_ssh=false. After calling the tool, respond with exactly OK.`;
+}
+
+function buildInputsForTarget(base: string): string[] {
+  return [
+    base,
+    `github.com/${base}`,
+    `https://github.com/${base}`,
+    `https://github.com/${base}.git`,
+    `https://github.com/${base}/tree/main`,
+  ];
+}
+
+function buildRepoCases(): RepoCase[] {
+  const output: RepoCase[] = [];
+  for (const target of E2E_REPO_TARGETS) {
+    const inputs = buildInputsForTarget(target.base);
+    for (const input of inputs) {
+      output.push({ target, input });
+    }
+  }
+  return output;
+}
+
+function runOpencodeCommand(
+  prompt: string,
+  telemetryPath: string
+): Promise<CommandResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("opencode", ["run", prompt], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        OPENCODE_REPO_TELEMETRY_PATH: telemetryPath,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    const timeout = setTimeout(() => {
+      child.kill("SIGTERM");
+      reject(new Error(`opencode run timed out after ${COMMAND_TIMEOUT_MS}ms`));
+    }, COMMAND_TIMEOUT_MS);
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      resolve({
+        code: code ?? 1,
+        stdout,
+        stderr,
+      });
+    });
+  });
+}
+
+function parseTelemetry(text: string): TelemetryEvent[] {
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const output: TelemetryEvent[] = [];
+
+  for (const line of lines) {
+    const parsed = JSON.parse(line) as TelemetryEvent;
+    if (parsed.event === "repo_ensure_local") {
+      output.push(parsed);
+    }
+  }
+
+  return output;
+}
+
+async function assertLocalPathExists(localPath: string): Promise<void> {
+  const info = await stat(localPath);
+  if (!info.isDirectory()) {
+    throw new Error(`Expected local_path to be a directory: ${localPath}`);
+  }
+}
+
+async function main(): Promise<void> {
+  const keep = process.env.OPENCODE_REPO_E2E_KEEP === "true";
+  const repoCases = buildRepoCases();
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "opencode-repo-e2e-"));
+  const cloneRoot = path.join(tempRoot, "clones");
+  const telemetryPath = path.join(tempRoot, "telemetry.jsonl");
+
+  try {
+    for (const repoCase of repoCases) {
+      const prompt = buildPrompt(repoCase.input, cloneRoot);
+      const result = await runOpencodeCommand(prompt, telemetryPath);
+      if (result.code !== 0) {
+        throw new Error(
+          `opencode run failed for ${repoCase.input}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`
+        );
+      }
+    }
+
+    const telemetryRaw = await readFile(telemetryPath, "utf8");
+    const telemetryEvents = parseTelemetry(telemetryRaw);
+    if (telemetryEvents.length < repoCases.length) {
+      throw new Error(
+        `Expected at least ${repoCases.length} telemetry events, got ${telemetryEvents.length}`
+      );
+    }
+
+    const targetSummaries: TargetSummary[] = [];
+    for (const target of E2E_REPO_TARGETS) {
+      const targetInputs = buildInputsForTarget(target.base);
+      const matched: TelemetryEvent[] = [];
+
+      for (const input of targetInputs) {
+        const event = telemetryEvents.findLast(
+          (item) => item.repo_input === input && item.ok
+        );
+        if (!event) {
+          throw new Error(
+            `No successful telemetry event found for target=${target.name} input=${input}`
+          );
+        }
+
+        if (!event.local_path) {
+          throw new Error(
+            `Missing local_path in telemetry event for target=${target.name} input=${input}`
+          );
+        }
+
+        await assertLocalPathExists(event.local_path);
+        matched.push(event);
+      }
+
+      const uniquePaths = new Set(matched.map((item) => item.local_path));
+      if (uniquePaths.size !== 1) {
+        throw new Error(
+          `Expected one local path for target=${target.name}, got ${JSON.stringify([...uniquePaths])}`
+        );
+      }
+
+      targetSummaries.push({
+        target: target.base,
+        testedInputs: targetInputs,
+        resolvedLocalPath: [...uniquePaths][0] ?? "",
+        telemetryEvents: matched.length,
+      });
+    }
+
+    console.log("E2E test passed");
+    console.log(
+      JSON.stringify(
+        {
+          cloneRoot,
+          telemetryPath,
+          testedTargets: E2E_REPO_TARGETS.map((target) => target.base),
+          targetSummaries,
+          telemetryEvents: repoCases.length,
+        },
+        null,
+        2
+      )
+    );
+  } finally {
+    if (!keep) {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  }
+}
+
+await main();
