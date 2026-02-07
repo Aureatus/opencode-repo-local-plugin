@@ -45,6 +45,13 @@ const E2E_REPO_TARGETS: readonly RepoTarget[] = [
 ];
 
 const COMMAND_TIMEOUT_MS = 180_000;
+const COMMAND_RETRY_DELAY_MS = 5000;
+const MAX_COMMAND_ATTEMPTS = Number.parseInt(
+  process.env.OPENCODE_REPO_E2E_MAX_ATTEMPTS ?? "2",
+  10
+);
+const RETRYABLE_FAILURE_PATTERN =
+  /timed out|timeout|rate limit|429|502|503|504|econnreset|etimedout|enotfound|eai_again|network/i;
 
 function buildPrompt(repo: string, cloneRoot: string): string {
   return `You must call repo_ensure_local first. Use repo='${repo}', clone_root='${cloneRoot}', update_mode='fetch-only', and allow_ssh=false. After calling the tool, respond with exactly OK.`;
@@ -117,6 +124,61 @@ function runOpencodeCommand(
   });
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function shouldRetryFailure(stdout: string, stderr: string): boolean {
+  return RETRYABLE_FAILURE_PATTERN.test(`${stdout}\n${stderr}`);
+}
+
+async function runOpencodeCommandWithRetry(
+  prompt: string,
+  telemetryPath: string,
+  repoInput: string
+): Promise<CommandResult> {
+  let attempt = 1;
+
+  while (attempt <= MAX_COMMAND_ATTEMPTS) {
+    try {
+      const result = await runOpencodeCommand(prompt, telemetryPath);
+      if (result.code === 0) {
+        return result;
+      }
+
+      if (
+        attempt >= MAX_COMMAND_ATTEMPTS ||
+        !shouldRetryFailure(result.stdout, result.stderr)
+      ) {
+        return result;
+      }
+
+      console.warn(
+        `Retrying opencode run for ${repoInput} after attempt ${attempt}/${MAX_COMMAND_ATTEMPTS}`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        attempt >= MAX_COMMAND_ATTEMPTS ||
+        !RETRYABLE_FAILURE_PATTERN.test(message)
+      ) {
+        throw error;
+      }
+
+      console.warn(
+        `Retrying opencode run for ${repoInput} after transient error: ${message}`
+      );
+    }
+
+    await sleep(COMMAND_RETRY_DELAY_MS * attempt);
+    attempt += 1;
+  }
+
+  throw new Error(`Failed to run opencode for ${repoInput}`);
+}
+
 function parseTelemetry(text: string): TelemetryEvent[] {
   const lines = text
     .split("\n")
@@ -151,7 +213,11 @@ async function main(): Promise<void> {
   try {
     for (const repoCase of repoCases) {
       const prompt = buildPrompt(repoCase.input, cloneRoot);
-      const result = await runOpencodeCommand(prompt, telemetryPath);
+      const result = await runOpencodeCommandWithRetry(
+        prompt,
+        telemetryPath,
+        repoCase.input
+      );
       if (result.code !== 0) {
         throw new Error(
           `opencode run failed for ${repoCase.input}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`
