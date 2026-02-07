@@ -88,9 +88,7 @@ Output fields:
 ```bash
 bun install
 bun run fix
-bun run fix:safe
 bun run check
-bun run check:no-ignores
 bun run lint
 bun run typecheck
 bun run test
@@ -108,13 +106,10 @@ Integration script notes:
 ## Git hooks
 
 - This repo uses Husky for pre-commit and pre-push hooks.
-- Full local check command: `bun run check` (runs `check:core` and `test:integration` in parallel).
-- Core check command: `bun run check:core` (runs `check:no-ignores`, `lint`, `typecheck`, `test`, and `build`).
+- Full local check command: `bun run check` (runs no-ignore guard, `lint`, `typecheck`, `test`, `build`, and `test:integration` in parallel where possible).
 - Build command: `bun run build` (`tsdown --fail-on-warn`, warnings fail the build).
-- Ignore-guard command: `bun run check:no-ignores` (fails on `biome-ignore` and TS ignore directives).
 - Lint command: `bun run lint` (Ultracite/Biome with `--error-on-warnings`).
 - Fix command: `bun run fix` (Ultracite safe + unsafe fixes, then no-ignore guard).
-- Safe fix command: `bun run fix:safe` (Ultracite safe fixes only).
 - Pre-commit command: `bun run check`.
 - Pre-push command: `bun run check`.
 - Hooks are installed by running `bun install` via the `prepare` script.
