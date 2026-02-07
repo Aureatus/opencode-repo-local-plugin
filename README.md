@@ -31,7 +31,12 @@ bun install
 bun run build
 ```
 
-2. Add the local package path to your OpenCode plugin config (or publish and install via npm).
+2. For local OpenCode testing in this repo, use the included local plugin wiring:
+
+- `.opencode/package.json` installs this package via `file:..`
+- `.opencode/plugins/repo-local-plugin.ts` loads it as a local plugin
+
+3. Or publish and install via npm for regular usage.
 
 ## Tool: `repo_ensure_local`
 
