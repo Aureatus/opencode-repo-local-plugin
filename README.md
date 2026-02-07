@@ -71,6 +71,7 @@ Output fields:
 
 ```bash
 bun install
+bun run check
 bun run typecheck
 bun run test
 bun run test:integration
@@ -87,6 +88,7 @@ Integration script notes:
 ## Git hooks
 
 - This repo uses Husky for pre-commit and pre-push hooks.
-- Pre-commit command: `bun run check:commit` (runs `typecheck` and `test`).
-- Pre-push command: `bun run check:push` (runs `check:commit` and `build`).
+- Full local check command: `bun run check` (runs `typecheck`, `test`, `build`, and `test:integration`).
+- Pre-commit command: `bun run check`.
+- Pre-push command: `bun run check`.
 - Hooks are installed by running `bun install` via the `prepare` script.

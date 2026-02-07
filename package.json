@@ -25,8 +25,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:integration": "bun run scripts/integration-test.ts",
-    "check:commit": "bun run typecheck && bun run test",
-    "check:push": "bun run check:commit && bun run build",
+    "check": "bun run typecheck && bun run test && bun run build && bun run test:integration",
     "prepare": "husky",
     "prepack": "bun run build"
   },
