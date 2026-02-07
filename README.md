@@ -1,4 +1,4 @@
-# opencode-repo-local-plugin
+# opencode-repo-local
 
 OpenCode plugin that ensures a repository exists locally (clone or update) and returns an absolute path so you can use OpenCode built-in tools directly.
 
@@ -18,7 +18,7 @@ Add the package to your OpenCode config:
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-repo-local-plugin"]
+  "plugin": ["opencode-repo-local"]
 }
 ```
 
@@ -84,7 +84,7 @@ Freshness semantics:
 ## Telemetry
 
 - `repo_ensure_local` writes invocation telemetry on every run.
-- Default file: `~/.local/share/opencode/plugins/opencode-repo-local-plugin/telemetry.jsonl`
+- Default file: `~/.local/share/opencode/plugins/opencode-repo-local/telemetry.jsonl`
 - Event fields include `repo_input`, `canonical_repo_url`, `status`, `local_path`, and error metadata.
 
 ## OpenCode permissions
@@ -109,7 +109,7 @@ Verify plugin list includes `.opencode/plugins/repo-local-plugin.ts`.
 2. Forced tool smoke test (deterministic):
 
 ```bash
-opencode run "You must call repo_ensure_local first. Use repo='Aureatus/opencode-repo-local-plugin' and update_mode='fetch-only'. Then report only: status, repo_url, local_path, head_sha."
+opencode run "You must call repo_ensure_local first. Use repo='Aureatus/opencode-repo-local' and update_mode='fetch-only'. Then report only: status, repo_url, local_path, head_sha."
 ```
 
 3. Natural-intent smoke test (agent should choose the tool):
@@ -162,7 +162,7 @@ bun run build
 
 Integration script notes:
 
-- Default run validates multiple allowed input formats against `Aureatus/opencode-repo-local-plugin`.
+- Default run validates multiple allowed input formats against `Aureatus/opencode-repo-local`.
 - Override to a single repo input: `bun run test:integration -- https://github.com/OWNER/REPO.git`
 - Keep clone directory for inspection: `OPENCODE_REPO_INTEGRATION_KEEP=true bun run test:integration`
 - Set custom clone root: `OPENCODE_REPO_INTEGRATION_ROOT=/abs/path bun run test:integration`
@@ -171,7 +171,7 @@ E2E script notes:
 
 - `bun run test:e2e` runs real `opencode run` prompts and asserts tool usage via telemetry.
 - It validates all supported repo input formats across two required targets:
-  - `Aureatus/opencode-repo-local-plugin`
+  - `Aureatus/opencode-repo-local`
   - `ghoulr/opencode-websearch-cited`
 - It checks each target's formats resolve to one normalized local path.
 - Keep temporary artifacts for inspection: `OPENCODE_REPO_E2E_KEEP=true bun run test:e2e`

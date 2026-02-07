@@ -23,7 +23,7 @@ interface RepoEnsureTelemetryEvent {
 }
 
 const TELEMETRY_RELATIVE_PATH =
-  ".local/share/opencode/plugins/opencode-repo-local-plugin/telemetry.jsonl";
+  ".local/share/opencode/plugins/opencode-repo-local/telemetry.jsonl";
 
 function defaultTelemetryPath(): string {
   return path.join(os.homedir(), TELEMETRY_RELATIVE_PATH);

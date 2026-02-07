@@ -41,7 +41,7 @@ interface CommandResult {
 const E2E_REPO_TARGETS: readonly RepoTarget[] = [
   {
     name: "self",
-    base: "Aureatus/opencode-repo-local-plugin",
+    base: "Aureatus/opencode-repo-local",
   },
   {
     name: "fixture",

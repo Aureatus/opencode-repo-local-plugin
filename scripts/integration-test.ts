@@ -49,7 +49,7 @@ async function main(): Promise<void> {
     process.argv[2] || process.env.OPENCODE_REPO_INTEGRATION_REPO;
   const keep = process.env.OPENCODE_REPO_INTEGRATION_KEEP === "true";
   const providedRoot = process.env.OPENCODE_REPO_INTEGRATION_ROOT;
-  const defaultRepoBase = "Aureatus/opencode-repo-local-plugin";
+  const defaultRepoBase = "Aureatus/opencode-repo-local";
 
   const repoInputs = explicitRepo
     ? [explicitRepo]
@@ -64,7 +64,7 @@ async function main(): Promise<void> {
   const createdTempRoot = !providedRoot;
   const cloneRoot =
     providedRoot ||
-    (await mkdtemp(path.join(os.tmpdir(), "opencode-repo-local-plugin-")));
+    (await mkdtemp(path.join(os.tmpdir(), "opencode-repo-local-")));
 
   try {
     const primaryRepo = repoInputs[0];

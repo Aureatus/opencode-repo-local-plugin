@@ -66,13 +66,13 @@ If a bad version is published:
 2. Adjust dist-tags if needed:
 
 ```bash
-npm dist-tag add opencode-repo-local-plugin@<good-version> latest
+npm dist-tag add opencode-repo-local@<good-version> latest
 ```
 
 3. Deprecate bad version with guidance:
 
 ```bash
-npm deprecate opencode-repo-local-plugin@<bad-version> "Broken release, use <good-version>"
+npm deprecate opencode-repo-local@<bad-version> "Broken release, use <good-version>"
 ```
 
 Prefer deprecate + republish over unpublish.
