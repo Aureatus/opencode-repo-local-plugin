@@ -13,6 +13,7 @@ interface RunGitResult {
   stdout: string;
   stderr: string;
   exitCode: number;
+  timedOut: boolean;
 }
 
 export interface AheadBehindCounts {
@@ -22,6 +23,69 @@ export interface AheadBehindCounts {
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 const WHITESPACE_PATTERN = /\s+/;
+const AUTH_FAILURE_PATTERNS: readonly RegExp[] = [
+  /authentication failed/i,
+  /could not read (?:username|password) for 'https?:\/\//i,
+  /invalid username or token/i,
+  /repository not found/i,
+  /support for password authentication was removed/i,
+];
+const REMOTE_COMMANDS: ReadonlySet<string> = new Set([
+  "clone",
+  "fetch",
+  "pull",
+  "ls-remote",
+]);
+
+function summarizeGitOutput(stdout: string, stderr: string): string {
+  return [stderr, stdout].filter(Boolean).join("\n").trim();
+}
+
+function looksLikeAuthFailure(args: string[], output: string): boolean {
+  const command = args[0] ?? "";
+  if (!REMOTE_COMMANDS.has(command)) {
+    return false;
+  }
+
+  return AUTH_FAILURE_PATTERNS.some((pattern) => pattern.test(output));
+}
+
+export function createGitFailureError(
+  args: string[],
+  stdout: string,
+  stderr: string,
+  timedOut: boolean
+): RepoPluginError {
+  const command = `git ${args.join(" ")}`;
+  const output = summarizeGitOutput(stdout, stderr);
+
+  if (timedOut) {
+    const details = [command, output || "No output captured", "timed_out=true"]
+      .filter(Boolean)
+      .join("\n");
+    return new RepoPluginError("GIT_TIMEOUT", "git command timed out", details);
+  }
+
+  if (looksLikeAuthFailure(args, output)) {
+    const details = [
+      command,
+      output,
+      "Authentication is required for this remote. Configure HTTPS credentials (`gh auth login && gh auth setup-git`) or use SSH with `allow_ssh=true` and an SSH URL (for example, git@github.com:owner/repo.git).",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    return new RepoPluginError(
+      "GIT_AUTH",
+      "Git authentication failed for remote repository",
+      details
+    );
+  }
+
+  const details = [command, output || "No output captured"]
+    .filter(Boolean)
+    .join("\n");
+  return new RepoPluginError("GIT_FAILURE", "git command failed", details);
+}
 
 function runGitRaw(
   args: string[],
@@ -31,8 +95,14 @@ function runGitRaw(
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   return new Promise((resolve, reject) => {
+    let timedOut = false;
     const processRef = spawn("git", args, {
       cwd,
+      env: {
+        ...process.env,
+        GCM_INTERACTIVE: "never",
+        GIT_TERMINAL_PROMPT: "0",
+      },
       stdio: ["ignore", "pipe", "pipe"],
     });
 
@@ -42,6 +112,7 @@ function runGitRaw(
 
     if (timeoutMs > 0) {
       timeoutId = setTimeout(() => {
+        timedOut = true;
         processRef.kill("SIGTERM");
       }, timeoutMs);
     }
@@ -84,6 +155,7 @@ function runGitRaw(
         stdout: stdout.trim(),
         stderr: stderr.trim(),
         exitCode: exitCode ?? 1,
+        timedOut,
       });
     });
   });
@@ -95,10 +167,12 @@ async function runGit(
 ): Promise<string> {
   const result = await runGitRaw(args, options);
   if (result.exitCode !== 0) {
-    const details = [`git ${args.join(" ")}`, result.stderr || result.stdout]
-      .filter(Boolean)
-      .join("\n");
-    throw new RepoPluginError("GIT_FAILURE", "git command failed", details);
+    throw createGitFailureError(
+      args,
+      result.stdout,
+      result.stderr,
+      result.timedOut
+    );
   }
   return result.stdout;
 }
@@ -185,6 +259,13 @@ export async function getDefaultBranch(cwd: string): Promise<string | null> {
 
 export function getOriginUrl(cwd: string): Promise<string> {
   return runGit(["remote", "get-url", "origin"], { cwd });
+}
+
+export async function setOriginUrl(
+  cwd: string,
+  originUrl: string
+): Promise<void> {
+  await runGit(["remote", "set-url", "origin", originUrl], { cwd });
 }
 
 export async function isWorktreeDirty(cwd: string): Promise<boolean> {

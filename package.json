@@ -25,6 +25,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:integration": "bun run scripts/integration-test.ts",
+    "test:integration:private": "bun run scripts/integration-private-auth.ts",
     "test:e2e": "bun run scripts/e2e-opencode-run.ts",
     "test:e2e:npm": "bun run scripts/e2e-opencode-run.ts --mode npm",
     "opencode:npm": "bun run scripts/run-opencode-npm.ts",

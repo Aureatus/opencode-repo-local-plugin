@@ -17,6 +17,7 @@ interface RepoEnsureTelemetryEvent {
   ahead_by: number | null;
   behind_by: number | null;
   update_mode: string | null;
+  auth_mode: string | null;
   ref: string | null;
   error_code: string | null;
   error_message: string | null;
@@ -60,6 +61,7 @@ export async function logRepoEnsureSuccess(
     ahead_by: result.ahead_by,
     behind_by: result.behind_by,
     update_mode: args.update_mode ?? "ff-only",
+    auth_mode: args.auth_mode ?? "auto",
     ref: args.ref ?? null,
     error_code: null,
     error_message: null,
@@ -89,6 +91,7 @@ export async function logRepoEnsureFailure(
     ahead_by: null,
     behind_by: null,
     update_mode: args.update_mode ?? "ff-only",
+    auth_mode: args.auth_mode ?? "auto",
     ref: args.ref ?? null,
     error_code: parsedError.code,
     error_message: parsedError.message,

@@ -1,4 +1,5 @@
 export type UpdateMode = "ff-only" | "fetch-only" | "reset-clean";
+export type AuthMode = "auto" | "https" | "ssh";
 
 export type RepoEnsureStatus =
   | "cloned"
@@ -20,6 +21,7 @@ export interface RepoEnsureLocalArgs {
   depth?: number;
   update_mode?: string;
   allow_ssh?: boolean;
+  auth_mode?: string;
 }
 
 export interface ParsedRepoUrl {

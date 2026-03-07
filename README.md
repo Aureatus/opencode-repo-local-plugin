@@ -69,6 +69,7 @@ Arguments:
 - `depth` (optional): shallow clone depth
 - `update_mode` (optional): `ff-only` (default), `fetch-only`, `reset-clean`
 - `allow_ssh` (optional): allow `git@host:owner/repo.git` URLs
+- `auth_mode` (optional): `auto` (default), `https`, `ssh`
 
 Output fields:
 
@@ -91,11 +92,31 @@ Freshness semantics:
 - Default `update_mode=ff-only` is the recommended one-call path for agents: it updates when safe and returns freshness metadata.
 - Use `update_mode=fetch-only` when you explicitly want non-mutating freshness/version checks.
 
+Auth mode semantics:
+
+- Default `auth_mode=auto` uses HTTPS first and falls back to SSH on auth failures when SSH URL derivation is possible.
+- Use `auth_mode=https` to force HTTPS-only behavior.
+- Use `auth_mode=ssh` to force SSH-only behavior.
+
 ## Environment variables
 
 - `OPENCODE_REPO_CLONE_ROOT`: default clone root (fallback is `~/.opencode/repos`)
 - `OPENCODE_REPO_ALLOW_SSH=true`: default SSH URL allowance
 - `OPENCODE_REPO_TELEMETRY_PATH`: optional telemetry JSONL path override
+
+## Private repository auth
+
+- Git commands run in non-interactive mode to avoid blocking OpenCode sessions on credential prompts.
+- For HTTPS auth, configure GitHub credentials once:
+
+```bash
+gh auth login
+gh auth setup-git
+```
+
+- For SSH auth, either:
+  - pass `auth_mode=ssh` (or `allow_ssh=true`) and use `git@host:owner/repo.git`, or
+  - set `OPENCODE_REPO_ALLOW_SSH=true` to allow SSH inputs by default.
 
 ## Telemetry
 
@@ -183,6 +204,14 @@ Integration script notes:
 - Override to a single repo input: `bun run test:integration -- https://github.com/OWNER/REPO.git`
 - Keep clone directory for inspection: `OPENCODE_REPO_INTEGRATION_KEEP=true bun run test:integration`
 - Set custom clone root: `OPENCODE_REPO_INTEGRATION_ROOT=/abs/path bun run test:integration`
+- Private auth integration is opt-in: `bun run test:integration:private`
+- Configure private targets with env vars:
+  - `OPENCODE_REPO_PRIVATE_HTTPS_REPO=https://host/owner/private-repo.git`
+  - `OPENCODE_REPO_PRIVATE_SSH_REPO=git@host:owner/private-repo.git`
+- Optional expectations (`success` or an error code like `GIT_AUTH`):
+  - `OPENCODE_REPO_PRIVATE_EXPECT_HTTPS=success`
+  - `OPENCODE_REPO_PRIVATE_EXPECT_AUTO=success`
+  - `OPENCODE_REPO_PRIVATE_EXPECT_SSH=success`
 
 E2E script notes:
 
